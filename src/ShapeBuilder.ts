@@ -44,11 +44,11 @@ export const defaultShapesNames = Object.keys(
 ) as DefaultShapeName[];
 
 export interface ShapeBuilderI {
-  createRandomShape(): ShapeI<unknown>;
+  createRandomShape(): ShapeI;
 }
 
 export class ShapeBuilder implements ShapeBuilderI {
-  createRandomShape(): ShapeI<DefaultShapeName> {
+  createRandomShape(): ShapeI {
     const shapeName = getRandomFromArray(defaultShapesNames);
     return new Shape(defaultShapesMap[shapeName], shapeName);
   }

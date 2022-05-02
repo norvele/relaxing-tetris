@@ -1,25 +1,25 @@
 import { ShapeError, ShapeErrorCode } from "@/errors/ShapeError";
+import type { Schema, SchemaSymbol } from "@/common";
 
-export type ShapeSchema<T = 1> =
-  | Array<Array<0 | T>>
-  | ReadonlyArray<ReadonlyArray<0 | T>>;
+export type ShapeSymbol = SchemaSymbol;
+export type ShapeSchema = Schema;
 
-export interface ShapeI<T> {
-  getSymbol(): T;
-  getSchema(): ShapeSchema<T>;
+export interface ShapeI {
+  getSymbol(): ShapeSymbol;
+  getSchema(): ShapeSchema;
   getSize(): number;
   rotateClockwise(): void;
   rotateCounterClockwise(): void;
   getRotateIndex(): number;
 }
 
-export class Shape<T> implements ShapeI<T> {
-  protected currentSchema: ShapeSchema<T>;
-  protected schemaSymbol: T;
+export class Shape implements ShapeI {
+  protected currentSchema: ShapeSchema;
+  protected schemaSymbol: ShapeSymbol;
   protected rotateIndex = 0;
   protected size = 0;
 
-  constructor(principalSchema: ShapeSchema, schemaSymbol: T) {
+  constructor(principalSchema: ShapeSchema, schemaSymbol: ShapeSymbol) {
     if (!this.guardSchemaSize(principalSchema)) {
       throw new ShapeError(
         "Wrong shape schema size",
@@ -31,11 +31,11 @@ export class Shape<T> implements ShapeI<T> {
     this.schemaSymbol = schemaSymbol;
   }
 
-  public getSymbol(): T {
+  public getSymbol(): ShapeSymbol {
     return this.schemaSymbol;
   }
 
-  public getSchema(): ShapeSchema<T> {
+  public getSchema(): ShapeSchema {
     return this.currentSchema;
   }
 
@@ -63,8 +63,8 @@ export class Shape<T> implements ShapeI<T> {
 
   protected getInitialSchema(
     principalSchema: ShapeSchema,
-    schemaSymbol: T
-  ): ShapeSchema<T> {
+    schemaSymbol: ShapeSymbol
+  ): ShapeSchema {
     return principalSchema.map((row) => {
       return row.map((item) => (item === 1 ? schemaSymbol : 0));
     });

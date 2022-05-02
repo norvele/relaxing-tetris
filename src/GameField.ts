@@ -1,10 +1,7 @@
 import type { ShapeI } from "@/Shape";
 import { GameError, GameErrorCode } from "@/errors/GameError";
 import { getMatrixCollision } from "@/utils/getMatrixCollision";
-
-export type FieldSchema<T = 1> = Array<Array<0 | T>>;
-
-type ShapeSymbol = string | number;
+import type { Schema, MutableSchema } from "@/common";
 
 export interface GameFieldConfig {
   field: {
@@ -16,7 +13,7 @@ export interface GameFieldConfig {
 export interface CurrentShape {
   x: number;
   y: number;
-  shape: ShapeI<ShapeSymbol>;
+  shape: ShapeI;
 }
 
 export enum MoveDirection {
@@ -39,13 +36,13 @@ interface ShapeCollision {
 export interface GameFieldI {
   getConfig(): GameFieldConfig;
   getCurrentShape(): CurrentShape | undefined;
-  addShape(shape: ShapeI<unknown>): void;
+  addShape(shape: ShapeI): void;
   moveShape(direction: MoveDirection): boolean;
   rotateShape(direction: RotateDirection): boolean;
   fixShape(): boolean;
-  getCurrentSchema(): FieldSchema<ShapeSymbol>;
-  getFixedSchema(): FieldSchema<ShapeSymbol>;
-  setFixedSchema(schema: FieldSchema<ShapeSymbol>): void;
+  getCurrentSchema(): Schema;
+  getFixedSchema(): Schema;
+  setFixedSchema(schema: Schema): void;
   resetFixedSchema(): void;
   getFullyFilledRows(): number[];
   removeFullyFilledRows(): void;
@@ -53,7 +50,7 @@ export interface GameFieldI {
 
 export class GameField implements GameFieldI {
   protected config: GameFieldConfig;
-  protected fixedSchema: FieldSchema<ShapeSymbol>;
+  protected fixedSchema: Schema;
   protected currentShape: CurrentShape | undefined;
 
   constructor(config: GameFieldConfig) {
@@ -72,15 +69,23 @@ export class GameField implements GameFieldI {
     return this.currentShape;
   }
 
-  public addShape(shape: ShapeI<ShapeSymbol>) {
+  public addShape(shape: ShapeI) {
     if (this.currentShape) {
       throw new GameError(
         "The shape must be one on the field",
         GameErrorCode.shapeMustBeOne
       );
     }
+    const shapeSchema = shape.getSchema();
+    let endingEmptyLines = 0;
+    for (let i = shapeSchema.length - 1; i > 0; i--) {
+      if (shapeSchema[i].some((item) => item)) {
+        break;
+      }
+      endingEmptyLines++;
+    }
     const x = Math.floor(this.config.field.width / 2 - shape.getSize() / 2);
-    const y = -shape.getSize();
+    const y = -shape.getSize() + endingEmptyLines + 1;
     this.currentShape = { x, y, shape: shape };
   }
 
@@ -159,13 +164,13 @@ export class GameField implements GameFieldI {
     return isOverFill;
   }
 
-  public getCurrentSchema(): FieldSchema<ShapeSymbol> {
+  public getCurrentSchema(): Schema {
     if (!this.currentShape) {
       return this.getFixedSchema();
     }
     const fixedSchemaClone = JSON.parse(
       JSON.stringify(this.fixedSchema)
-    ) as FieldSchema<ShapeSymbol>;
+    ) as MutableSchema;
 
     const { x, y, shape } = this.currentShape;
     shape.getSchema().forEach((shapeRow, shapeSchemaY) => {
@@ -186,11 +191,11 @@ export class GameField implements GameFieldI {
     return fixedSchemaClone;
   }
 
-  public getFixedSchema(): FieldSchema<ShapeSymbol> {
+  public getFixedSchema(): Schema {
     return this.fixedSchema;
   }
 
-  public setFixedSchema(schema: FieldSchema<ShapeSymbol>) {
+  public setFixedSchema(schema: Schema) {
     if (!this.guardSchemaSize(schema)) {
       throw new GameError(
         "Schema size is wrong",
@@ -261,7 +266,7 @@ export class GameField implements GameFieldI {
   }
 
   protected getCollision(
-    shape: ShapeI<ShapeSymbol>,
+    shape: ShapeI,
     x: number,
     y: number,
     withSafeArea = true
@@ -278,7 +283,7 @@ export class GameField implements GameFieldI {
     });
   }
 
-  protected createEmptySchema(width: number, height: number): FieldSchema<0> {
+  protected createEmptySchema(width: number, height: number): Schema {
     return Array(height)
       .fill([])
       .map(() => Array(width).fill(0));
@@ -288,7 +293,7 @@ export class GameField implements GameFieldI {
     return new GameError("There is no shape", GameErrorCode.noShape);
   }
 
-  protected guardSchemaSize(schema: FieldSchema<ShapeSymbol>) {
+  protected guardSchemaSize(schema: Schema) {
     if (schema.length !== this.config.field.height) {
       return false;
     }

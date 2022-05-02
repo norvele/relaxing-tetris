@@ -7,12 +7,15 @@ import AppGame from "@/components/AppGame.vue";
 </template>
 
 <style>
+@font-face {
+  font-family: Digital;
+  src: url(./assets/digital.ttf);
+}
+
 :root {
   --color-background: #6f775e;
   --color-inactive: #656f5b;
   --color-active: #000;
-  --field-rows: 0;
-  --field-columns: 0;
 }
 body {
   font-family: Helvetica, Arial, sans-serif;
@@ -25,5 +28,12 @@ body,
 html {
   margin: 0;
   padding: 0;
+}
+
+#app {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

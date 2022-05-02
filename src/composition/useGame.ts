@@ -1,10 +1,10 @@
 import { injectContainer } from "@/container";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
-import type { FieldSchema } from "@/GameField";
 import { MoveDirection, RotateDirection } from "@/GameField";
 import { useKeyboard } from "@/composition/useKeyboard";
+import { ShapeI } from "@/Shape";
 
-enum GameState {
+export enum GameState {
   notStarted,
   played,
   paused,
@@ -13,6 +13,9 @@ enum GameState {
 
 interface GameData {
   state: GameState;
+  score: number;
+  isTechnicalPause: boolean;
+  nextShape: ShapeI | undefined;
 }
 
 const leftRightConfig = {
@@ -32,30 +35,40 @@ const downConfig = {
 export function useGame() {
   const { gameField, shapeBuilder } = injectContainer();
   const { keyboardEventInitiator } = useKeyboard();
-  const config = gameField.getConfig();
 
-  const currentSchema = ref<FieldSchema<string | number>>(
-    gameField.getCurrentSchema()
-  );
+  const currentSchema = ref(gameField.getCurrentSchema());
   const tickInterval = ref();
   const gameData = ref<GameData>({
     state: GameState.notStarted,
+    score: 0,
+    isTechnicalPause: false,
+    nextShape: undefined,
   });
+  const animatedRowsIndexes = ref<number[]>([]);
   const isPlayed = computed(() => gameData.value.state === GameState.played);
 
   const updateGameFieldState = () => {
     currentSchema.value = gameField.getCurrentSchema();
   };
 
+  const addShape = () => {
+    gameField.addShape(
+      gameData.value.nextShape || shapeBuilder.createRandomShape()
+    );
+    gameData.value.nextShape = shapeBuilder.createRandomShape();
+  };
+
   const reset = () => {
     gameData.value.state = GameState.notStarted;
+    gameData.value.score = 0;
+    gameData.value.nextShape = undefined;
     gameField.resetFixedSchema();
     updateGameFieldState();
   };
 
   const start = () => {
     gameData.value.state = GameState.played;
-    gameField.addShape(shapeBuilder.createRandomShape());
+    addShape();
   };
 
   const finish = () => {
@@ -78,7 +91,21 @@ export function useGame() {
     }
   };
 
-  const moveShapeDown = () => {
+  const animateFullFilledRows = async (
+    rowsIndexes: number[]
+  ): Promise<true> => {
+    return new Promise((resolve) => {
+      gameData.value.isTechnicalPause = true;
+      animatedRowsIndexes.value = rowsIndexes;
+      setTimeout(() => {
+        gameData.value.isTechnicalPause = false;
+        animatedRowsIndexes.value = [];
+        resolve(true);
+      }, 500);
+    });
+  };
+
+  const moveShapeDown = async () => {
     if (!isPlayed.value) {
       return;
     }
@@ -86,9 +113,15 @@ export function useGame() {
     if (!isMoveSuccess) {
       if (gameField.fixShape()) {
         finish();
+        return;
       }
-      gameField.removeFullyFilledRows();
-      gameField.addShape(shapeBuilder.createRandomShape());
+      const fullyFilledRows = gameField.getFullyFilledRows();
+      if (fullyFilledRows.length) {
+        await animateFullFilledRows(fullyFilledRows);
+        gameData.value.score += fullyFilledRows.length;
+        gameField.removeFullyFilledRows();
+      }
+      addShape();
     }
     updateGameFieldState();
   };
@@ -125,7 +158,10 @@ export function useGame() {
 
   onMounted(() => {
     tickInterval.value = setInterval(() => {
-      if (gameData.value.state === GameState.played) {
+      if (
+        gameData.value.state === GameState.played &&
+        !gameData.value.isTechnicalPause
+      ) {
         moveShapeDown();
       }
     }, 500);
@@ -136,7 +172,8 @@ export function useGame() {
   });
 
   return {
-    config,
     currentSchema,
+    animatedRowsIndexes,
+    gameData,
   };
 }

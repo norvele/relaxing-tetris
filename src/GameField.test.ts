@@ -22,7 +22,7 @@ describe("GameField", () => {
     );
     const gameField = new GameField({ field: { width: 5, height: 5 } });
     gameField.addShape(shape);
-    gameField.moveShape(MoveDirection.down, 5);
+    gameField.moveShape(MoveDirection.down, 3);
     gameField.fixShape();
 
     expect(gameField.getFixedSchema()).toEqual([
@@ -53,7 +53,7 @@ describe("GameField", () => {
     const shape = getRotationShape();
     const gameField = new GameField({ field: { width: 6, height: 5 } });
     gameField.addShape(shape);
-    gameField.moveShape(MoveDirection.down, 4);
+    gameField.moveShape(MoveDirection.down, 1);
     gameField.rotateShape(RotateDirection.clockwise);
     gameField.moveShape(MoveDirection.left, 3);
     gameField.rotateShape(RotateDirection.counterClockwise);
@@ -72,7 +72,7 @@ describe("GameField", () => {
     const shape = getRotationShape();
     const gameField = new GameField({ field: { width: 6, height: 5 } });
     gameField.addShape(shape);
-    gameField.moveShape(MoveDirection.down, 4);
+    gameField.moveShape(MoveDirection.down, 1);
     gameField.rotateShape(RotateDirection.counterClockwise);
     gameField.moveShape(MoveDirection.right, 3);
     gameField.rotateShape(RotateDirection.clockwise);
