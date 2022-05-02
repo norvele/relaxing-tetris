@@ -4,9 +4,12 @@ interface BoundaryBox {
   x2: number;
   y2: number;
 }
+type Matrix =
+  | Array<Array<0 | unknown>>
+  | ReadonlyArray<ReadonlyArray<0 | unknown>>;
 
 export function sliceMatrix(
-  matrix: Array<Array<unknown>>,
+  matrix: Matrix,
   { x1, y1, x2, y2 }: BoundaryBox,
   outOfBoxItem: unknown = undefined
 ) {

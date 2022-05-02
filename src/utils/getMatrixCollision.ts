@@ -1,6 +1,8 @@
 import { sliceMatrix } from "@/utils/sliceMatrix";
 
-type Matrix = Array<Array<0 | unknown>>;
+type Matrix =
+  | Array<Array<0 | unknown>>
+  | ReadonlyArray<ReadonlyArray<0 | unknown>>;
 interface Overlay {
   x: number;
   y: number;

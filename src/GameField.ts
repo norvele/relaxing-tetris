@@ -2,7 +2,7 @@ import type { ShapeI } from "@/Shape";
 import { GameError, GameErrorCode } from "@/errors/GameError";
 import { getMatrixCollision } from "@/utils/getMatrixCollision";
 
-type FieldSchema<T = 1> = Array<Array<0 | T>>;
+export type FieldSchema<T = 1> = Array<Array<0 | T>>;
 
 type ShapeSymbol = string | number;
 
@@ -13,7 +13,7 @@ export interface GameFieldConfig {
   };
 }
 
-interface CurrentShape {
+export interface CurrentShape {
   x: number;
   y: number;
   shape: ShapeI<ShapeSymbol>;
@@ -37,13 +37,18 @@ interface ShapeCollision {
 }
 
 export interface GameFieldI {
+  getConfig(): GameFieldConfig;
+  getCurrentShape(): CurrentShape | undefined;
   addShape(shape: ShapeI<unknown>): void;
   moveShape(direction: MoveDirection): boolean;
   rotateShape(direction: RotateDirection): boolean;
-  fixShape(): void;
-  getSchema(): FieldSchema<ShapeSymbol>;
-  setSchema(schema: FieldSchema<ShapeSymbol>): void;
+  fixShape(): boolean;
+  getCurrentSchema(): FieldSchema<ShapeSymbol>;
+  getFixedSchema(): FieldSchema<ShapeSymbol>;
+  setFixedSchema(schema: FieldSchema<ShapeSymbol>): void;
+  resetFixedSchema(): void;
   getFullyFilledRows(): number[];
+  removeFullyFilledRows(): void;
 }
 
 export class GameField implements GameFieldI {
@@ -57,6 +62,14 @@ export class GameField implements GameFieldI {
       config.field.width,
       config.field.height
     );
+  }
+
+  public getConfig(): GameFieldConfig {
+    return this.config;
+  }
+
+  public getCurrentShape(): CurrentShape | undefined {
+    return this.currentShape;
   }
 
   public addShape(shape: ShapeI<ShapeSymbol>) {
@@ -130,6 +143,30 @@ export class GameField implements GameFieldI {
     if (!this.currentShape) {
       throw this.getNoShapeError();
     }
+    let isOverFill = false;
+    if (
+      this.getCollision(
+        this.currentShape.shape,
+        this.currentShape.x,
+        this.currentShape.y,
+        false
+      ).isCollision
+    ) {
+      isOverFill = true;
+    }
+    this.fixedSchema = this.getCurrentSchema();
+    this.currentShape = undefined;
+    return isOverFill;
+  }
+
+  public getCurrentSchema(): FieldSchema<ShapeSymbol> {
+    if (!this.currentShape) {
+      return this.getFixedSchema();
+    }
+    const fixedSchemaClone = JSON.parse(
+      JSON.stringify(this.fixedSchema)
+    ) as FieldSchema<ShapeSymbol>;
+
     const { x, y, shape } = this.currentShape;
     shape.getSchema().forEach((shapeRow, shapeSchemaY) => {
       shapeRow.forEach((shapeCell, shapeSchemaX) => {
@@ -142,18 +179,18 @@ export class GameField implements GameFieldI {
           fieldY < this.config.field.height &&
           shapeCell !== 0
         ) {
-          this.fixedSchema[fieldY][fieldX] = shapeCell;
+          fixedSchemaClone[fieldY][fieldX] = shapeCell;
         }
       });
     });
-    this.currentShape = undefined;
+    return fixedSchemaClone;
   }
 
-  public getSchema(): FieldSchema<ShapeSymbol> {
+  public getFixedSchema(): FieldSchema<ShapeSymbol> {
     return this.fixedSchema;
   }
 
-  public setSchema(schema: FieldSchema<ShapeSymbol>) {
+  public setFixedSchema(schema: FieldSchema<ShapeSymbol>) {
     if (!this.guardSchemaSize(schema)) {
       throw new GameError(
         "Schema size is wrong",
@@ -161,6 +198,13 @@ export class GameField implements GameFieldI {
       );
     }
     this.fixedSchema = schema;
+  }
+
+  public resetFixedSchema() {
+    this.fixedSchema = this.createEmptySchema(
+      this.config.field.width,
+      this.config.field.height
+    );
   }
 
   public getFullyFilledRows() {
@@ -172,6 +216,17 @@ export class GameField implements GameFieldI {
       }
     });
     return rows;
+  }
+
+  public removeFullyFilledRows() {
+    const rowsIndexes = this.getFullyFilledRows();
+    const compensation = rowsIndexes.map(() =>
+      Array(this.config.field.width).fill(0)
+    );
+    const cleanedSchema = this.fixedSchema.filter(
+      (row, index) => !rowsIndexes.includes(index)
+    );
+    this.fixedSchema = [...compensation, ...cleanedSchema];
   }
 
   protected moveShape1time(direction: MoveDirection): boolean {
@@ -208,18 +263,18 @@ export class GameField implements GameFieldI {
   protected getCollision(
     shape: ShapeI<ShapeSymbol>,
     x: number,
-    y: number
+    y: number,
+    withSafeArea = true
   ): ShapeCollision {
     const shapeSize = shape.getSize();
-    const safeSpawnArea = this.createEmptySchema(
-      this.config.field.width,
-      shapeSize
-    );
+    const safeSpawnArea = withSafeArea
+      ? this.createEmptySchema(this.config.field.width, shapeSize)
+      : [];
     const safeScheme = [...safeSpawnArea, ...this.fixedSchema];
     return getMatrixCollision(safeScheme, {
       matrix: shape.getSchema(),
       x,
-      y: y + shapeSize,
+      y: y + safeSpawnArea.length,
     });
   }
 

@@ -1,6 +1,8 @@
 import { ShapeError, ShapeErrorCode } from "@/errors/ShapeError";
 
-export type ShapeSchema<T = 1> = Array<Array<0 | T>>;
+export type ShapeSchema<T = 1> =
+  | Array<Array<0 | T>>
+  | ReadonlyArray<ReadonlyArray<0 | T>>;
 
 export interface ShapeI<T> {
   getSymbol(): T;

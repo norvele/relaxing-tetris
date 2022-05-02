@@ -25,7 +25,7 @@ describe("GameField", () => {
     gameField.moveShape(MoveDirection.down, 5);
     gameField.fixShape();
 
-    expect(gameField.getSchema()).toEqual([
+    expect(gameField.getFixedSchema()).toEqual([
       [0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0],
       [0, 0, 2, 0, 0],
@@ -40,7 +40,7 @@ describe("GameField", () => {
     gameField.rotateShape(RotateDirection.clockwise); // Check rotate collision
     gameField.fixShape();
 
-    expect(gameField.getSchema()).toEqual([
+    expect(gameField.getFixedSchema()).toEqual([
       [0, 0, 0, 0, 0],
       [3, 0, 0, 0, 0],
       [3, 3, 2, 0, 0],
@@ -59,7 +59,7 @@ describe("GameField", () => {
     gameField.rotateShape(RotateDirection.counterClockwise);
     gameField.fixShape();
 
-    expect(gameField.getSchema()).toEqual([
+    expect(gameField.getFixedSchema()).toEqual([
       [0, 0, 0, 0, 0, 0],
       [2, 2, 2, 2, 0, 0],
       [0, 0, 0, 0, 0, 0],
@@ -78,7 +78,7 @@ describe("GameField", () => {
     gameField.rotateShape(RotateDirection.clockwise);
     gameField.fixShape();
 
-    expect(gameField.getSchema()).toEqual([
+    expect(gameField.getFixedSchema()).toEqual([
       [0, 0, 0, 0, 0, 0],
       [0, 0, 2, 2, 2, 2],
       [0, 0, 0, 0, 0, 0],
@@ -89,7 +89,7 @@ describe("GameField", () => {
 
   test("should return fully filled rows", () => {
     const gameField = new GameField({ field: { width: 4, height: 4 } });
-    gameField.setSchema([
+    gameField.setFixedSchema([
       [1, 2, 1, 1],
       [1, 1, 2, 3],
       [0, 0, 0, 0],
@@ -101,12 +101,75 @@ describe("GameField", () => {
   test("should throw an error when the schema has wrong size", () => {
     const gameField = new GameField({ field: { width: 4, height: 4 } });
     const callback = () => {
-      gameField.setSchema([
+      gameField.setFixedSchema([
         [1, 2],
         [1, 1],
       ]);
     };
     expect(callback).toThrowError(GameError);
+  });
+
+  test("should remove fully filled rows", () => {
+    const gameField = new GameField({ field: { width: 4, height: 4 } });
+    gameField.setFixedSchema([
+      [1, 0, 1, 1],
+      [1, 1, 2, 3],
+      [0, 1, 0, 0],
+      [1, 2, 2, 1],
+    ]);
+    gameField.removeFullyFilledRows();
+    expect(gameField.getFixedSchema()).toEqual([
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [1, 0, 1, 1],
+      [0, 1, 0, 0],
+    ]);
+  });
+
+  test("should return true then it is overfill", () => {
+    const shape = new Shape(
+      [
+        [0, 1, 0],
+        [1, 1, 1],
+        [0, 0, 0],
+      ],
+      2
+    );
+    const gameField = new GameField({ field: { width: 4, height: 4 } });
+    gameField.setFixedSchema([
+      [0, 0, 0, 0],
+      [1, 1, 0, 3],
+      [0, 1, 0, 0],
+      [1, 2, 0, 1],
+    ]);
+    gameField.addShape(shape);
+    gameField.moveShape(MoveDirection.down, 3);
+    const result = gameField.fixShape();
+
+    expect(result).toEqual(true);
+  });
+
+  test("should return false because it isn't overfill", () => {
+    const shape = new Shape(
+      [
+        [0, 1, 0],
+        [1, 1, 1],
+        [0, 0, 0],
+      ],
+      2
+    );
+    const gameField = new GameField({ field: { width: 4, height: 4 } });
+    gameField.setFixedSchema([
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 1, 0, 0],
+      [1, 2, 0, 1],
+    ]);
+    gameField.addShape(shape);
+    gameField.moveShape(MoveDirection.down, 3);
+    const result = gameField.fixShape();
+
+    expect(result).toEqual(false);
   });
 });
 
