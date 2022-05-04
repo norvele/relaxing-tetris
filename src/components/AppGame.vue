@@ -12,7 +12,7 @@ const { currentSchema, animatedRowsIndexes, gameData } = useGame();
 
 const nextShapeSchema = computed(() => gameData.value.nextShape?.getSchema());
 
-const cellSize = 8 * 3;
+const cellSize = 24; // Should be divide on 2
 
 const customProperties = computed(
   () =>

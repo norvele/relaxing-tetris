@@ -3,6 +3,7 @@ import { computed, CSSProperties } from "vue";
 import { Schema } from "@/common";
 
 const props = defineProps<{
+  cellSize: number;
   dataSchema?: Schema;
   boundarySchema?: Schema;
   animatedRowsIndexes?: number[];
@@ -30,11 +31,22 @@ const getCellValue = (x: number, y: number) => {
   );
 };
 
+const sizes = computed(() => {
+  return {
+    cell: props.cellSize,
+    gap: 2,
+    border: 2,
+  };
+});
+
 const customProperties = computed(
   () =>
     ({
       "--field-rows": fieldSize.value.height,
       "--field-columns": fieldSize.value.width,
+      "--field-cell-size": `${sizes.value.cell}px`,
+      "--field-gap-size": `${sizes.value.gap}px`,
+      "--field-border-size": `${sizes.value.border}px`,
     } as CSSProperties)
 );
 </script>
@@ -74,9 +86,9 @@ const customProperties = computed(
 .app-field {
   --field-rows: 0;
   --field-columns: 0;
-  /*--field-cell-size: var(--field-cell-size, 24);*/
-  --field-border-size: calc(var(--field-cell-size) / 8);
-  --field-gap-size: calc(var(--field-border-size) / 2);
+  --field-cell-size: 0;
+  --field-gap-size: 0;
+  --field-border-size: 0;
 
   text-align: left;
   box-sizing: border-box;
