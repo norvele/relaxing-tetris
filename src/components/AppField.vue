@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed, CSSProperties } from "vue";
-import { Schema } from "@/common";
+import { Schema, Theme } from "@/common";
+import { useAppStore } from "@/stores/useAppStore";
+import { DefaultShapeName } from "@/ShapeBuilder";
+
+const appStore = useAppStore();
 
 const props = defineProps<{
   cellSize: number;
@@ -8,6 +12,16 @@ const props = defineProps<{
   boundarySchema?: Schema;
   animatedRowsIndexes?: number[];
 }>();
+
+const colorsMap: Record<DefaultShapeName, string> = {
+  I: "#c5e7bd",
+  J: "#1a3d58",
+  L: "#d8b998",
+  O: "#ffde4c",
+  S: "#0cada5",
+  Z: "#89687a",
+  T: "#fe6d41",
+};
 
 const iterableSchema = computed(
   () => props.boundarySchema || props.dataSchema || [[]]
@@ -49,10 +63,23 @@ const customProperties = computed(
       "--field-border-size": `${sizes.value.border}px`,
     } as CSSProperties)
 );
+
+const getCellStyles = (x: number, y: number) => {
+  if (appStore.theme === Theme.color) {
+    return {
+      color: colorsMap[getCellValue(x, y) as DefaultShapeName],
+    };
+  }
+  return {};
+};
 </script>
 
 <template>
-  <div class="app-field" :style="customProperties">
+  <div
+    class="app-field"
+    :class="`__theme-${appStore.theme}`"
+    :style="customProperties"
+  >
     <template v-for="(row, rowIndex) in iterableSchema" :key="rowIndex">
       <div
         class="app-field__cell"
@@ -62,6 +89,7 @@ const customProperties = computed(
           _filled: !!getCellValue(cellIndex, rowIndex),
           _animated: isRowAnimated(rowIndex),
         }"
+        :style="getCellStyles(cellIndex, rowIndex)"
       />
     </template>
   </div>
@@ -69,17 +97,11 @@ const customProperties = computed(
 
 <style scoped>
 @keyframes blinking {
-  0% {
-    color: var(--color-inactive);
-  }
-  49% {
-    color: var(--color-inactive);
-  }
   50% {
-    color: var(--color-active);
+    color: var(--color-inactive);
   }
   99% {
-    color: var(--color-active);
+    color: var(--color-inactive);
   }
 }
 
@@ -122,6 +144,12 @@ const customProperties = computed(
 }
 
 .app-field__cell._animated {
-  animation: blinking 0.15s infinite;
+  animation: blinking 0.15s steps(2) infinite;
+}
+
+.app-field.__theme-color .app-field__cell::before {
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
 }
 </style>

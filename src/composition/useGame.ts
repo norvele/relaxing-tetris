@@ -1,22 +1,9 @@
 import { injectContainer } from "@/container";
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 import { MoveDirection, RotateDirection } from "@/GameField";
 import { useKeyboard } from "@/composition/useKeyboard";
-import { ShapeI } from "@/Shape";
-
-export enum GameState {
-  notStarted,
-  played,
-  paused,
-  ended,
-}
-
-interface GameData {
-  state: GameState;
-  score: number;
-  isTechnicalPause: boolean;
-  nextShape: ShapeI | undefined;
-}
+import { useCounterStore } from "@/stores/useGameStore";
+import { GameState } from "@/common";
 
 const leftRightConfig = {
   repeat: {
@@ -35,53 +22,43 @@ const downConfig = {
 export function useGame() {
   const { gameField, shapeBuilder } = injectContainer();
   const { keyboardEventInitiator } = useKeyboard();
+  const gameStore = useCounterStore();
 
   const currentSchema = ref(gameField.getCurrentSchema());
   const tickInterval = ref();
-  const gameData = ref<GameData>({
-    state: GameState.notStarted,
-    score: 0,
-    isTechnicalPause: false,
-    nextShape: undefined,
-  });
   const animatedRowsIndexes = ref<number[]>([]);
-  const isPlayed = computed(() => gameData.value.state === GameState.played);
 
   const updateGameFieldState = () => {
     currentSchema.value = gameField.getCurrentSchema();
   };
 
   const addShape = () => {
-    gameField.addShape(
-      gameData.value.nextShape || shapeBuilder.createRandomShape()
-    );
-    gameData.value.nextShape = shapeBuilder.createRandomShape();
+    gameField.addShape(gameStore.nextShape || shapeBuilder.createRandomShape());
+    gameStore.setNextShape(shapeBuilder.createRandomShape());
   };
 
   const reset = () => {
-    gameData.value.state = GameState.notStarted;
-    gameData.value.score = 0;
-    gameData.value.nextShape = undefined;
+    gameStore.reset();
     gameField.resetFixedSchema();
     updateGameFieldState();
   };
 
   const start = () => {
-    gameData.value.state = GameState.played;
+    gameStore.start();
     addShape();
   };
 
   const finish = () => {
-    gameData.value.state = GameState.ended;
+    gameStore.finish();
   };
 
   const onSpace = () => {
-    switch (gameData.value.state) {
+    switch (gameStore.state) {
       case GameState.paused:
-        gameData.value.state = GameState.played;
+        gameStore.resume();
         break;
       case GameState.played:
-        gameData.value.state = GameState.paused;
+        gameStore.pause();
         break;
       case GameState.ended:
         reset();
@@ -95,10 +72,10 @@ export function useGame() {
     rowsIndexes: number[]
   ): Promise<true> => {
     return new Promise((resolve) => {
-      gameData.value.isTechnicalPause = true;
+      gameStore.setTechnicalPause(true);
       animatedRowsIndexes.value = rowsIndexes;
       setTimeout(() => {
-        gameData.value.isTechnicalPause = false;
+        gameStore.setTechnicalPause(false);
         animatedRowsIndexes.value = [];
         resolve(true);
       }, 500);
@@ -106,7 +83,7 @@ export function useGame() {
   };
 
   const moveShapeDown = async () => {
-    if (!isPlayed.value) {
+    if (!gameStore.isPlayed) {
       return;
     }
     const isMoveSuccess = gameField.moveShape(MoveDirection.down);
@@ -118,7 +95,7 @@ export function useGame() {
       const fullyFilledRows = gameField.getFullyFilledRows();
       if (fullyFilledRows.length) {
         await animateFullFilledRows(fullyFilledRows);
-        gameData.value.score += fullyFilledRows.length;
+        gameStore.incrementScore(fullyFilledRows.length);
         gameField.removeFullyFilledRows();
       }
       addShape();
@@ -127,7 +104,7 @@ export function useGame() {
   };
 
   const moveShapeLeft = () => {
-    if (!isPlayed.value) {
+    if (!gameStore.isPlayed) {
       return;
     }
     gameField.moveShape(MoveDirection.left);
@@ -135,7 +112,7 @@ export function useGame() {
   };
 
   const moveShapeRight = () => {
-    if (!isPlayed.value) {
+    if (!gameStore.isPlayed) {
       return;
     }
     gameField.moveShape(MoveDirection.right);
@@ -143,7 +120,7 @@ export function useGame() {
   };
 
   const rotateShape = () => {
-    if (!isPlayed.value) {
+    if (!gameStore.isPlayed) {
       return;
     }
     gameField.rotateShape(RotateDirection.clockwise);
@@ -158,10 +135,7 @@ export function useGame() {
 
   onMounted(() => {
     tickInterval.value = setInterval(() => {
-      if (
-        gameData.value.state === GameState.played &&
-        !gameData.value.isTechnicalPause
-      ) {
+      if (gameStore.isPlayed && !gameStore.isTechnicalPause) {
         moveShapeDown();
       }
     }, 500);
@@ -174,6 +148,6 @@ export function useGame() {
   return {
     currentSchema,
     animatedRowsIndexes,
-    gameData,
+    gameStore,
   };
 }

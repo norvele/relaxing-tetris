@@ -25,7 +25,8 @@ const onChange = (event: Event) => {
 
 <style scoped>
 .ui-select {
-  padding: 5px;
-  font-size: 24px;
+  background: none;
+  border-color: currentColor;
+  color: currentColor;
 }
 </style>

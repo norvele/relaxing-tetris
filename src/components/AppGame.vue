@@ -1,16 +1,19 @@
 <script setup lang="ts">
-import { useGame, GameState } from "@/composition/useGame";
+import { useGame } from "@/composition/useGame";
 import AppField from "@/components/AppField.vue";
 import { computed, CSSProperties } from "vue";
 import AppNumber from "@/components/AppNumber.vue";
+import { GameState } from "@/common";
+import { useAppStore } from "@/stores/useAppStore";
 
 const shapeBoundarySchema = Array(4)
   .fill(0)
   .map(() => Array(4).fill(0));
 
-const { currentSchema, animatedRowsIndexes, gameData } = useGame();
+const { currentSchema, animatedRowsIndexes, gameStore } = useGame();
+const appStore = useAppStore();
 
-const nextShapeSchema = computed(() => gameData.value.nextShape?.getSchema());
+const nextShapeSchema = computed(() => gameStore.nextShape?.getSchema());
 
 const cellSize = 24; // Should be divide on 2
 
@@ -23,7 +26,11 @@ const customProperties = computed(
 </script>
 
 <template>
-  <div class="app-game" :style="customProperties">
+  <div
+    class="app-game"
+    :style="customProperties"
+    :class="`__theme-${appStore.theme}`"
+  >
     <div class="app-game__main">
       <AppField
         class="main-field"
@@ -35,7 +42,7 @@ const customProperties = computed(
     <div class="app-game__sidebar sidebar">
       <div class="sidebar__top">
         <div>Score:</div>
-        <AppNumber :value="gameData.score" />
+        <AppNumber :value="gameStore.score" />
       </div>
       <AppField
         class="shape-field"
@@ -46,19 +53,19 @@ const customProperties = computed(
       <div>
         <div
           class="state"
-          :class="{ _active: gameData.state === GameState.notStarted }"
+          :class="{ _active: gameStore.state === GameState.notStarted }"
         >
           Press space<br />to start
         </div>
         <div
           class="state"
-          :class="{ _animated: gameData.state === GameState.paused }"
+          :class="{ _animated: gameStore.state === GameState.paused }"
         >
           Pause
         </div>
         <div
           class="state"
-          :class="{ _active: gameData.state === GameState.ended }"
+          :class="{ _active: gameStore.state === GameState.ended }"
         >
           Game Over
         </div>
@@ -122,5 +129,9 @@ const customProperties = computed(
 
 .state._animated {
   animation: blinking 1s infinite;
+}
+
+.app-game.__theme-color .main-field {
+  border-radius: 8px;
 }
 </style>
