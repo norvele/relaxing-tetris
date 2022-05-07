@@ -14,7 +14,7 @@ const props = defineProps<{
 }>();
 
 const colorsMap: Record<DefaultShapeName, string> = {
-  I: "#c5e7bd",
+  I: "#a2d497",
   J: "#1a3d58",
   L: "#d8b998",
   O: "#ffde4c",
