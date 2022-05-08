@@ -10,12 +10,14 @@
     "test": "jest"
   },
   "dependencies": {
+    "lodash": "^4.17.21",
     "pinia": "^2.0.13",
     "vue": "^3.2.25"
   },
   "devDependencies": {
     "@babel/core": "^7.17.9",
     "@types/jest": "^27.4.1",
+    "@types/lodash": "^4.14.182",
     "@typescript-eslint/eslint-plugin": "^5.19.0",
     "@typescript-eslint/parser": "^5.19.0",
     "@vitejs/plugin-vue": "^2.3.1",

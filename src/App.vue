@@ -43,6 +43,7 @@ const setTheme = (theme: string) => {
 :root {
   --color-background: #6f775e;
   --color-inactive: #656f5b;
+  --color-shadow: #656f5b;
   --color-active: #000;
 }
 body {
@@ -71,6 +72,7 @@ html {
 .app-root.__theme-crt {
   --color-background: #516c4f;
   --color-inactive: transparent;
+  --color-shadow: transparent;
   --color-active: #c1ffbb;
 
   font-family: DisposableDroidBB, sans-serif;
@@ -108,6 +110,7 @@ html {
 .app-root.__theme-color {
   --color-background: #ffffff;
   --color-inactive: #f2f2f2;
+  --color-shadow: #e1e1e1;
   --color-active: #1a3d58;
 }
 

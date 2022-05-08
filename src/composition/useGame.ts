@@ -25,11 +25,13 @@ export function useGame() {
   const gameStore = useCounterStore();
 
   const currentSchema = ref(gameField.getCurrentSchema());
+  const shapeShadowSchema = ref(gameField.getShapeShadowSchema());
   const tickInterval = ref();
   const animatedRowsIndexes = ref<number[]>([]);
 
   const updateGameFieldState = () => {
     currentSchema.value = gameField.getCurrentSchema();
+    shapeShadowSchema.value = gameField.getShapeShadowSchema();
   };
 
   const addShape = () => {
@@ -147,6 +149,7 @@ export function useGame() {
 
   return {
     currentSchema,
+    shapeShadowSchema,
     animatedRowsIndexes,
     gameStore,
   };

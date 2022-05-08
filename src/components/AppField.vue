@@ -3,6 +3,7 @@ import { computed, CSSProperties } from "vue";
 import { Schema, Theme } from "@/common";
 import { useAppStore } from "@/stores/useAppStore";
 import { DefaultShapeName } from "@/ShapeBuilder";
+import get from "lodash/get";
 
 const appStore = useAppStore();
 
@@ -10,6 +11,7 @@ const props = defineProps<{
   cellSize: number;
   dataSchema?: Schema;
   boundarySchema?: Schema;
+  shadowSchema?: Schema;
   animatedRowsIndexes?: number[];
 }>();
 
@@ -39,11 +41,10 @@ const isRowAnimated = (index: number) => {
   return props.animatedRowsIndexes.includes(index);
 };
 
-const getCellValue = (x: number, y: number) => {
-  return (
-    (props.dataSchema && props.dataSchema[y] && props.dataSchema[y][x]) || 0
-  );
-};
+const getCellValue = (x: number, y: number) => get(props.dataSchema, [y, x], 0);
+
+const isShadow = (x: number, y: number) =>
+  Boolean(get(props.shadowSchema, [y, x]));
 
 const sizes = computed(() => {
   return {
@@ -88,6 +89,7 @@ const getCellStyles = (x: number, y: number) => {
         :class="{
           _filled: !!getCellValue(cellIndex, rowIndex),
           _animated: isRowAnimated(rowIndex),
+          _shaded: isShadow(cellIndex, rowIndex),
         }"
         :style="getCellStyles(cellIndex, rowIndex)"
       />
@@ -141,6 +143,10 @@ const getCellStyles = (x: number, y: number) => {
 
 .app-field__cell._filled {
   color: var(--color-active);
+}
+
+.app-field__cell._shaded {
+  color: var(--color-shadow);
 }
 
 .app-field__cell._animated {

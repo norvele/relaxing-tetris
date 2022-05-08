@@ -5,7 +5,7 @@ const themeKey = "theme";
 
 export const useAppStore = defineStore("appStore", {
   state: () => ({
-    theme: (localStorage.getItem(themeKey) as Theme) || Theme.lcd,
+    theme: (localStorage.getItem(themeKey) as Theme) || Theme.color,
   }),
   actions: {
     setTheme(value: Theme) {

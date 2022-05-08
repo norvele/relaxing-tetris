@@ -2,6 +2,9 @@ import type { ShapeI } from "@/Shape";
 import { GameError, GameErrorCode } from "@/errors/GameError";
 import { getMatrixCollision } from "@/utils/getMatrixCollision";
 import type { Schema, MutableSchema } from "@/common";
+import { sumMatrix } from "@/utils/sumMatrix";
+import { sliceMatrix } from "@/utils/sliceMatrix";
+import get from "lodash/get";
 
 export interface GameFieldConfig {
   field: {
@@ -46,6 +49,7 @@ export interface GameFieldI {
   resetFixedSchema(): void;
   getFullyFilledRows(): number[];
   removeFullyFilledRows(): void;
+  getShapeShadowSchema(): Schema;
 }
 
 export class GameField implements GameFieldI {
@@ -168,27 +172,13 @@ export class GameField implements GameFieldI {
     if (!this.currentShape) {
       return this.getFixedSchema();
     }
-    const fixedSchemaClone = JSON.parse(
-      JSON.stringify(this.fixedSchema)
-    ) as MutableSchema;
 
     const { x, y, shape } = this.currentShape;
-    shape.getSchema().forEach((shapeRow, shapeSchemaY) => {
-      shapeRow.forEach((shapeCell, shapeSchemaX) => {
-        const fieldX = x + shapeSchemaX;
-        const fieldY = y + shapeSchemaY;
-        if (
-          fieldX >= 0 &&
-          fieldX < this.config.field.width &&
-          fieldY >= 0 &&
-          fieldY < this.config.field.height &&
-          shapeCell !== 0
-        ) {
-          fixedSchemaClone[fieldY][fieldX] = shapeCell;
-        }
-      });
+    return sumMatrix(this.getFixedSchema(), {
+      x,
+      y,
+      matrix: shape.getSchema(),
     });
-    return fixedSchemaClone;
   }
 
   public getFixedSchema(): Schema {
@@ -232,6 +222,42 @@ export class GameField implements GameFieldI {
       (row, index) => !rowsIndexes.includes(index)
     );
     this.fixedSchema = [...compensation, ...cleanedSchema];
+  }
+
+  public getShapeShadowSchema() {
+    const schema = this.createEmptySchema(
+      this.config.field.width,
+      this.config.field.height
+    );
+    const currentShape = this.currentShape;
+    if (!currentShape) {
+      return schema;
+    }
+    const shapeSchema = currentShape.shape.getSchema();
+    const slicedFixedSchema = sliceMatrix(this.getFixedSchema(), {
+      x1: currentShape.x,
+      y1: currentShape.y,
+      x2: currentShape.x + currentShape.shape.getSize() - 1,
+      y2: this.config.field.height - 1,
+    });
+    const shadedCells = {} as Record<number, boolean>;
+    slicedFixedSchema.forEach((row, y) => {
+      row.forEach((cell, x) => {
+        const shapeCell = get(shapeSchema, [y, x], 0);
+        if (shapeCell !== 0) {
+          shadedCells[x] = true;
+          return;
+        }
+        if (cell) {
+          shadedCells[x] = false;
+          return;
+        }
+        if (shadedCells[x]) {
+          schema[currentShape.y + y][currentShape.x + x] = 1;
+        }
+      });
+    });
+    return schema;
   }
 
   protected moveShape1time(direction: MoveDirection): boolean {
@@ -283,7 +309,7 @@ export class GameField implements GameFieldI {
     });
   }
 
-  protected createEmptySchema(width: number, height: number): Schema {
+  protected createEmptySchema(width: number, height: number): MutableSchema {
     return Array(height)
       .fill([])
       .map(() => Array(width).fill(0));

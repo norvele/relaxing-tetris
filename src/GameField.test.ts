@@ -171,6 +171,37 @@ describe("GameField", () => {
 
     expect(result).toEqual(false);
   });
+
+  test("should return shape shadow", () => {
+    const shape = new Shape(
+      [
+        [0, 1, 0],
+        [1, 1, 1],
+        [0, 0, 0],
+      ],
+      2
+    );
+    const gameField = new GameField({ field: { width: 5, height: 6 } });
+    gameField.setFixedSchema([
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 3, 0, 0],
+      [0, 2, 3, 0, 0],
+      [0, 2, 0, 0, 0],
+    ]);
+    gameField.addShape(shape);
+    gameField.moveShape(MoveDirection.down, 2);
+
+    expect(gameField.getShapeShadowSchema()).toEqual([
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 1, 0, 1, 0],
+      [0, 0, 0, 1, 0],
+      [0, 0, 0, 1, 0],
+    ]);
+  });
 });
 
 function getRotationShape() {

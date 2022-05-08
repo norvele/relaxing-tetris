@@ -10,7 +10,7 @@ const shapeBoundarySchema = Array(4)
   .fill(0)
   .map(() => Array(4).fill(0));
 
-const { currentSchema, animatedRowsIndexes, gameStore } = useGame();
+const { currentSchema, shapeShadowSchema, animatedRowsIndexes, gameStore } = useGame();
 const appStore = useAppStore();
 
 const nextShapeSchema = computed(() => gameStore.nextShape?.getSchema());
@@ -35,6 +35,7 @@ const customProperties = computed(
       <AppField
         class="main-field"
         :data-schema="currentSchema"
+        :shadow-schema="shapeShadowSchema"
         :animated-rows-indexes="animatedRowsIndexes"
         :cell-size="cellSize"
       />

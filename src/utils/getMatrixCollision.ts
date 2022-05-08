@@ -1,15 +1,13 @@
 import { sliceMatrix } from "@/utils/sliceMatrix";
+import { Schema } from "@/common";
 
-type Matrix =
-  | Array<Array<0 | unknown>>
-  | ReadonlyArray<ReadonlyArray<0 | unknown>>;
 interface Overlay {
   x: number;
   y: number;
-  matrix: Matrix;
+  matrix: Schema;
 }
 
-export function getMatrixCollision(base: Matrix, overlay: Overlay) {
+export function getMatrixCollision(base: Schema, overlay: Overlay) {
   const overlayYSize = overlay.matrix.length;
   const overlayXSize = overlay.matrix[0].length;
   const checkedAreaCoords = {
