@@ -110,7 +110,7 @@ html {
 .app-root.__theme-color {
   --color-background: #ffffff;
   --color-inactive: #f2f2f2;
-  --color-shadow: #e1e1e1;
+  --color-shadow: #eeeeee;
   --color-active: #1a3d58;
 }
 
